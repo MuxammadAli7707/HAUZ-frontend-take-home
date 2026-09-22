@@ -42,7 +42,7 @@ function OnboardingPage() {
         throw new Error('Failed to create personal account')
       }
 
-      navigate({ to: '/' })
+      navigate({ to: '/profile' })
     } catch (error) {
       console.error(error)
 
