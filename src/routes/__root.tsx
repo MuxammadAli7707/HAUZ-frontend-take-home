@@ -1,17 +1,21 @@
 import type { QueryClient } from '@tanstack/react-query'
 import {
   HeadContent,
+  Outlet,
   Scripts,
   createRootRouteWithContext,
 } from '@tanstack/react-router'
 
 import appCss from '../styles.css?url'
+import { getCurrentUser } from '../lib/server/auth'
 
 export interface RouterContext {
   queryClient: QueryClient
 }
 
 export const Route = createRootRouteWithContext<RouterContext>()({
+  loader: () => getCurrentUser(),
+
   head: () => ({
     meta: [
       { charSet: 'utf-8' },
@@ -20,8 +24,35 @@ export const Route = createRootRouteWithContext<RouterContext>()({
     ],
     links: [{ rel: 'stylesheet', href: appCss }],
   }),
+
+  component: RootLayout,
   shellComponent: RootDocument,
 })
+
+function RootLayout() {
+  const user = Route.useLoaderData()
+
+  return (
+    <>
+      <header>
+        <a href="/">HAUZ</a>
+
+        {user ? (
+          <div>
+            <span>{user.name || user.email}</span>
+            <button type="button">Log out</button>
+          </div>
+        ) : (
+          <a href="/sign-in">Sign in</a>
+        )}
+      </header>
+
+      <main>
+        <Outlet />
+      </main>
+    </>
+  )
+}
 
 function RootDocument({ children }: { children: React.ReactNode }) {
   return (
@@ -30,7 +61,6 @@ function RootDocument({ children }: { children: React.ReactNode }) {
         <HeadContent />
       </head>
       <body>
-        {/* The site header belongs here. See TASK.md. */}
         {children}
         <Scripts />
       </body>
