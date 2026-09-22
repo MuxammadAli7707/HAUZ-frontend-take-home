@@ -1,7 +1,9 @@
-import { useState } from 'react'
+import { useEffect, useState } from 'react'
+import { getPersonalAccount } from '../lib/server/personal-account'
 import { createFileRoute } from "@tanstack/react-router";
 
 import {
+  getCurrentUser,
   sendEmailCode,
   verifyEmailCode,
 } from "../lib/server/auth";
@@ -16,6 +18,20 @@ function SignInPage() {
   const [isCodeSent, setIsCodeSent] = useState(false);
   const [isSubmitting, setIsSubmitting] = useState(false);
   const [error, setError] = useState("");
+
+  useEffect(() => {
+    async function checkAccount() {
+      const user = await getCurrentUser()
+      console.log('Current user:', user)
+  
+      if (user) {
+        const personalAccount = await getPersonalAccount()
+        console.log('Personal account:', personalAccount)
+      }
+    }
+  
+    checkAccount()
+  }, [])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
     event.preventDefault();
