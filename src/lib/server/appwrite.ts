@@ -14,9 +14,16 @@ const endpoint = getEnv('APPWRITE_ENDPOINT')
 const projectId = getEnv('APPWRITE_PROJECT_ID')
 const apiKey = getEnv('APPWRITE_API_KEY')
 
-export function createAppwriteClient() {
+function createBaseClient() {
   return new Client()
     .setEndpoint(endpoint)
     .setProject(projectId)
-    .setKey(apiKey)
+}
+
+export function createAppwriteAdminClient() {
+  return createBaseClient().setKey(apiKey)
+}
+
+export function createAppwriteSessionClient(sessionSecret: string) {
+  return createBaseClient().setSession(sessionSecret)
 }
