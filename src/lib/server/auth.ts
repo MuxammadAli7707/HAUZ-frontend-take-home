@@ -91,3 +91,21 @@ export const verifyEmailCode = createServerFn({ method: 'POST' })
       return null
     }
   })
+
+  export const logout = createServerFn({
+    method: 'POST',
+  }).handler(async () => {
+    const sessionSecret = getSessionSecret()
+  
+    if (sessionSecret) {
+      try {
+        const account = createSessionAccount(sessionSecret)
+        await account.deleteSession('current')
+      } catch {
+      }
+    }
+  
+    deleteSessionCookie()
+  
+    return { success: true }
+  })
