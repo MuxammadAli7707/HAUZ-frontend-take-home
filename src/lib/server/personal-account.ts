@@ -95,12 +95,16 @@ export const createPersonalAccount = createServerFn({
     }
   })
 
-const updatePersonalAccountSchema = z.object({
-  firstName: z.string().trim().min(1).max(100),
-  lastName: z.string().trim().min(1).max(100),
-  contactEmail: z.string().trim().email().nullable(),
-  bio: z.string().trim().max(2000).nullable(),
-})
+  const updatePersonalAccountSchema = z
+  .object({
+    firstName: z.string().trim().min(1).max(100).optional(),
+    lastName: z.string().trim().min(1).max(100).optional(),
+    contactEmail: z.string().trim().email().nullable().optional(),
+    bio: z.string().trim().max(2000).nullable().optional(),
+  })
+  .refine((data) => Object.keys(data).length > 0, {
+    message: 'At least one field is required.',
+  })
 
 export const updatePersonalAccount = createServerFn({
   method: 'POST',

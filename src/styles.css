@@ -11,6 +11,10 @@ body {
   padding: 1.5rem;
   max-width: 44rem;
 }
+header {
+  display: flex;
+  gap: 60px;
+}
 
 h1 {
   font-size: 1.5rem;

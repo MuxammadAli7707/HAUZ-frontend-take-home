@@ -1,47 +1,77 @@
 import { useEffect, useState } from 'react'
-import { getPersonalAccount } from '../lib/server/personal-account'
-import { createFileRoute } from "@tanstack/react-router";
+import {
+  createFileRoute,
+  useNavigate,
+  useRouter,
+  useSearch,
+} from '@tanstack/react-router'
 
 import {
   getCurrentUser,
   sendEmailCode,
   verifyEmailCode,
-} from "../lib/server/auth";
+} from '../lib/server/auth'
+import { getPersonalAccount } from '../lib/server/personal-account'
 
-export const Route = createFileRoute("/sign-in")({
+export const Route = createFileRoute('/sign-in')({
+  validateSearch: (search: Record<string, unknown>) => ({
+    redirect:
+      typeof search.redirect === 'string' ? search.redirect : undefined,
+  }),
   component: SignInPage,
-});
+})
 
 function SignInPage() {
-  const [email, setEmail] = useState("");
-  const [code, setCode] = useState("");
-  const [isCodeSent, setIsCodeSent] = useState(false);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState("");
+  const navigate = useNavigate()
+  const router = useRouter()
+  const { redirect } = useSearch({
+    from: '/sign-in',
+  })
+
+  const [email, setEmail] = useState('')
+  const [code, setCode] = useState('')
+  const [isCodeSent, setIsCodeSent] = useState(false)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState('')
 
   useEffect(() => {
-    async function checkAccount() {
+    async function checkCurrentUser() {
       const user = await getCurrentUser()
-      console.log('Current user:', user)
-  
-      if (user) {
-        const personalAccount = await getPersonalAccount()
-        console.log('Personal account:', personalAccount)
+
+      if (!user) {
+        return
+      }
+
+      const personalAccount = await getPersonalAccount()
+
+      if (personalAccount?.status === 404) {
+        navigate({ to: '/onboarding' })
+        return
+      }
+    
+      if (personalAccount?.status === 200) {
+        if (redirect) {
+          navigate({ to: redirect })
+          return
+        }
+    
+        navigate({ to: '/profile' })
+        return
       }
     }
-  
-    checkAccount()
-  }, [])
+
+    checkCurrentUser()
+  }, [navigate, redirect])
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault();
+    event.preventDefault()
 
     if (isSubmitting) {
-      return;
+      return
     }
 
-    setError("");
-    setIsSubmitting(true);
+    setError('')
+    setIsSubmitting(true)
 
     try {
       if (!isCodeSent) {
@@ -49,10 +79,10 @@ function SignInPage() {
           data: {
             email,
           },
-        });
+        })
 
-        setIsCodeSent(true);
-        return;
+        setIsCodeSent(true)
+        return
       }
 
       await verifyEmailCode({
@@ -60,16 +90,37 @@ function SignInPage() {
           email,
           code,
         },
-      });
+      })
+      await router.invalidate()
 
-    } catch {
+      const personalAccount = await getPersonalAccount()
+      
+      if (personalAccount?.status === 404) {
+        navigate({ to: '/onboarding' })
+        return
+      }
+      
+      if (personalAccount?.status === 200) {
+        if (redirect) {
+          navigate({ to: redirect })
+          return
+        }
+      
+        navigate({ to: '/profile' })
+        return
+      }
+      
+      throw new Error('Failed to load personal account')
+    } catch (error) {
+      console.error(error)
+
       setError(
         isCodeSent
-          ? "Неверный код или срок действия кода истёк."
-          : "Не удалось отправить код. Проверьте email и попробуйте снова."
-      );
+          ? 'Неверный код или срок действия кода истёк.'
+          : 'Не удалось отправить код. Проверьте email и попробуйте снова.',
+      )
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
   }
 
@@ -87,13 +138,13 @@ function SignInPage() {
           placeholder="you@example.com"
           value={email}
           onChange={(event) => setEmail(event.target.value)}
-          disabled={isCodeSent}
+          disabled={isCodeSent || isSubmitting}
           required
         />
 
         {!isCodeSent ? (
           <button type="submit" disabled={isSubmitting}>
-            {isSubmitting ? "Sending..." : "Get code"}
+            {isSubmitting ? 'Sending...' : 'Get code'}
           </button>
         ) : (
           <>
@@ -107,11 +158,12 @@ function SignInPage() {
               value={code}
               onChange={(event) => setCode(event.target.value)}
               placeholder="Enter code"
+              disabled={isSubmitting}
               required
             />
 
             <button type="submit" disabled={isSubmitting}>
-              {isSubmitting ? "Checking..." : "Sign in"}
+              {isSubmitting ? 'Checking...' : 'Sign in'}
             </button>
           </>
         )}
@@ -119,5 +171,5 @@ function SignInPage() {
         {error && <p>{error}</p>}
       </form>
     </main>
-  );
+  )
 }

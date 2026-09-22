@@ -1,88 +1,95 @@
-import { useEffect, useState } from 'react'
-import { createFileRoute } from '@tanstack/react-router'
+import { useEffect, useState } from "react";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
 
 import {
   getPersonalAccount,
   updatePersonalAccount,
-} from '../lib/server/personal-account'
+} from "../lib/server/personal-account";
 
 type PersonalAccount = {
-  personalAccountId: string
-  firstName: string
-  lastName: string
-  role: 'property_owner' | 'realtor'
-  contactEmail: string | null
-  bio: string | null
-  createdAt: string
-  updatedAt: string
-}
+  personalAccountId: string;
+  firstName: string;
+  lastName: string;
+  role: "property_owner" | "realtor";
+  contactEmail: string | null;
+  bio: string | null;
+  createdAt: string;
+  updatedAt: string;
+};
 
-export const Route = createFileRoute('/profile')({
+export const Route = createFileRoute("/profile")({
   component: ProfilePage,
-})
+});
 
 function ProfilePage() {
-  const [profile, setProfile] = useState<PersonalAccount | null>(null)
+  const [profile, setProfile] = useState<PersonalAccount | null>(null);
 
-  const [firstName, setFirstName] = useState('')
-  const [lastName, setLastName] = useState('')
-  const [contactEmail, setContactEmail] = useState('')
-  const [bio, setBio] = useState('')
+  const [firstName, setFirstName] = useState("");
+  const [lastName, setLastName] = useState("");
+  const [contactEmail, setContactEmail] = useState("");
+  const [bio, setBio] = useState("");
 
-  const [isLoading, setIsLoading] = useState(true)
-  const [isSaving, setIsSaving] = useState(false)
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
 
-  const [error, setError] = useState('')
-  const [success, setSuccess] = useState('')
+  const [error, setError] = useState("");
+  const [success, setSuccess] = useState("");
+
+  const navigate = useNavigate();
 
   useEffect(() => {
     async function loadProfile() {
       try {
-        const result = await getPersonalAccount()
+        const result = await getPersonalAccount();
 
         if (!result) {
-          setError('You are not signed in.')
-          return
+          navigate({
+            to: "/sign-in",
+            search: {
+              redirect: "/profile",
+            },
+          });
+          return;
         }
 
         if (result.status === 404) {
-          setError('Profile not found.')
-          return
+          setError("Profile not found.");
+          return;
         }
 
         if (result.status !== 200) {
-          setError('Failed to load profile.')
-          return
+          setError("Failed to load profile.");
+          return;
         }
 
-        const account = JSON.parse(result.body) as PersonalAccount
+        const account = JSON.parse(result.body) as PersonalAccount;
 
-        setProfile(account)
-        setFirstName(account.firstName)
-        setLastName(account.lastName)
-        setContactEmail(account.contactEmail ?? '')
-        setBio(account.bio ?? '')
+        setProfile(account);
+        setFirstName(account.firstName);
+        setLastName(account.lastName);
+        setContactEmail(account.contactEmail ?? "");
+        setBio(account.bio ?? "");
       } catch (error) {
-        console.error(error)
-        setError('Failed to load profile.')
+        console.error(error);
+        setError("Failed to load profile.");
       } finally {
-        setIsLoading(false)
+        setIsLoading(false);
       }
     }
 
-    loadProfile()
-  }, [])
+    loadProfile();
+  }, []);
 
   async function handleSubmit(event: React.FormEvent<HTMLFormElement>) {
-    event.preventDefault()
+    event.preventDefault();
 
     if (isSaving) {
-      return
+      return;
     }
 
-    setError('')
-    setSuccess('')
-    setIsSaving(true)
+    setError("");
+    setSuccess("");
+    setIsSaving(true);
 
     try {
       const result = await updatePersonalAccount({
@@ -92,31 +99,29 @@ function ProfilePage() {
           contactEmail: contactEmail || null,
           bio: bio || null,
         },
-      })
+      });
 
       if (result.status !== 200) {
-        throw new Error('Failed to update profile.')
+        throw new Error("Failed to update profile.");
       }
 
-      const updatedProfile = JSON.parse(result.body) as PersonalAccount
+      const updatedProfile = JSON.parse(result.body) as PersonalAccount;
 
-      setProfile(updatedProfile)
-      setFirstName(updatedProfile.firstName)
-      setLastName(updatedProfile.lastName)
-      setContactEmail(updatedProfile.contactEmail ?? '')
-      setBio(updatedProfile.bio ?? '')
+      setProfile(updatedProfile);
+      setFirstName(updatedProfile.firstName);
+      setLastName(updatedProfile.lastName);
+      setContactEmail(updatedProfile.contactEmail ?? "");
+      setBio(updatedProfile.bio ?? "");
 
-      setSuccess('Profile updated successfully.')
+      setSuccess("Profile updated successfully.");
     } catch (error) {
-      console.error(error)
+      console.error(error);
 
       setError(
-        error instanceof Error
-          ? error.message
-          : 'Failed to update profile.',
-      )
+        error instanceof Error ? error.message : "Failed to update profile."
+      );
     } finally {
-      setIsSaving(false)
+      setIsSaving(false);
     }
   }
 
@@ -126,7 +131,7 @@ function ProfilePage() {
         <h1>My Profile</h1>
         <p>Loading...</p>
       </main>
-    )
+    );
   }
 
   if (error && !profile) {
@@ -135,11 +140,11 @@ function ProfilePage() {
         <h1>My Profile</h1>
         <p>{error}</p>
       </main>
-    )
+    );
   }
 
   if (!profile) {
-    return null
+    return null;
   }
 
   return (
@@ -218,9 +223,9 @@ function ProfilePage() {
         {success && <p>{success}</p>}
 
         <button type="submit" disabled={isSaving}>
-          {isSaving ? 'Saving...' : 'Save'}
+          {isSaving ? "Saving..." : "Save"}
         </button>
       </form>
     </main>
-  )
+  );
 }
